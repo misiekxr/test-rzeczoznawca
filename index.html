@@ -520,24 +520,26 @@ function renderCommentList(el, comments) {
 
 // ── ACTIONS ───────────────────────────────────────────────────────────────────
 async function castVote(id, ansIdx, q) {
+  // 1. Natychmiastowa reakcja wizualna (zanim baza odpowie)
+  const card = document.getElementById('card-' + id);
+  if (card) {
+    // Podświetlamy wybrany przycisk
+    card.querySelectorAll('.answer-btn').forEach(btn => {
+      btn.classList.toggle('selected-mine', parseInt(btn.dataset.idx) === ansIdx);
+    });
+    // Pokazujemy wykres wyników
+    const breakdown = document.getElementById('breakdown-' + id);
+    if (breakdown) breakdown.classList.add('visible');
+  }
+
+  // 2. Wysłanie danych do Firebase w tle
   try {
     await db.collection('questions').doc(id).set({
       [`votes.${currentUser}`]: ansIdx
     }, { merge: true });
-  } catch(e) { console.error('Błąd głosowania:', e); }
-}
-
-async function addComment(id, ta) {
-  const txt = ta.value.trim();
-  if (!txt) return;
-  ta.value = '';
-  try {
-    const docRef = db.collection('questions').doc(id);
-    const doc = await docRef.get();
-    const existing = doc.exists ? (doc.data().comments || []) : [];
-    existing.push({ user: currentUser, color: currentColor, text: txt, ts: Date.now() });
-    await docRef.set({ comments: existing }, { merge: true });
-  } catch(e) { console.error('Błąd komentarza:', e); }
+  } catch(e) { 
+    console.error('Błąd głosowania:', e);
+  }
 }
 
 // ── STATS ─────────────────────────────────────────────────────────────────────
