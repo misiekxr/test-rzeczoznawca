@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pytania egzaminacyjne – Rzeczoznawca p.poż.</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f8f6f1;
+    --surface: #ffffff;
+    --border: #e2ddd6;
+    --border-strong: #c8c2b8;
+    --text: #1a1814;
+    --text-muted: #6b6560;
+    --accent: #c0392b;
+    --accent-light: #fdf0ee;
+    --radius: 6px;
+  }
+  body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; min-height: 100vh; }
+
+  #login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+  .login-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 2.5rem; max-width: 400px; width: 100%; text-align: center; }
+  .login-box .brand { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.4rem; }
+  .login-box h1 { font-family: Georgia, serif; font-size: 22px; font-weight: normal; margin-bottom: 0.2rem; }
+  .login-box p { font-size: 13px; color: var(--text-muted); margin-bottom: 1.5rem; }
+  .color-preview { width: 44px; height: 44px; border-radius: 50%; margin: 0 auto 1.25rem; border: 2px solid var(--border); transition: background 0.3s; }
+  .login-box input { width: 100%; padding: 10px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius); font-size: 15px; background: var(--bg); color: var(--text); margin-bottom: 1rem; outline: none; }
+  .login-box input:focus { border-color: var(--accent); }
+  .btn-primary { background: var(--accent); color: white; border: none; padding: 10px 28px; border-radius: var(--radius); font-size: 14px; cursor: pointer; width: 100%; transition: opacity 0.2s; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  #app { display: none; }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 54px; position: sticky; top: 0; z-index: 100; }
+  header .logo { font-family: Georgia, serif; font-size: 14px; color: var(--accent); letter-spacing: 0.06em; text-transform: uppercase; }
+  .user-badge { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); }
+  .user-dot { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; color: white; flex-shrink: 0; }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #27ae60; flex-shrink: 0; }
+  .sync-dot.off { background: #e74c3c; }
+
+  main { max-width: 840px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 1rem; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.6rem 0.75rem; text-align: center; }
+  .stat-card .num { font-family: Georgia, serif; font-size: 20px; color: var(--text); }
+  .stat-card .lbl { font-size: 10px; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; }
+
+  .search-bar { width: 100%; padding: 9px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius); font-size: 14px; background: var(--surface); color: var(--text); outline: none; margin-bottom: 1rem; }
+  .search-bar:focus { border-color: var(--accent); }
+
+  .section-header { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); padding-bottom: 0.6rem; margin: 1.5rem 0 0.75rem; border-bottom: 1px solid var(--border); }
+
+  .q-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+  .q-header { padding: 0.9rem 1.1rem; cursor: pointer; display: flex; align-items: flex-start; gap: 10px; user-select: none; }
+  .q-num { font-size: 10px; color: var(--text-muted); letter-spacing: 0.06em; flex-shrink: 0; padding-top: 2px; min-width: 24px; }
+  .q-text { flex: 1; font-size: 13px; line-height: 1.65; }
+  .q-chevron { flex-shrink: 0; font-size: 14px; color: var(--text-muted); transition: transform 0.2s; padding-top: 2px; }
+  .q-card.open .q-chevron { transform: rotate(180deg); }
+
+  .q-status-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 5px; }
+  .answered-tag { font-size: 10px; padding: 1px 7px; border-radius: 10px; background: #e8f5e9; color: #2e7d32; font-weight: 600; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; cursor: help; }
+
+  .q-body { display: none; border-top: 1px solid var(--border); padding: 1.1rem; }
+  .q-card.open .q-body { display: block; }
+
+  .answers-list { list-style: none; margin-bottom: 0.75rem; }
+  .answers-list li { margin-bottom: 5px; }
+  .answer-btn { width: 100%; text-align: left; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); font-size: 13px; color: var(--text); cursor: pointer; transition: border-color 0.15s, background 0.15s; line-height: 1.5; display: flex; align-items: flex-start; gap: 8px; }
+  .answer-btn:hover { border-color: var(--border-strong); background: #f4f1ec; }
+  .answer-btn.selected-mine { border-color: var(--accent); background: var(--accent-light); }
+  .answer-letter { font-weight: 700; font-size: 10px; color: var(--text-muted); flex-shrink: 0; padding-top: 2px; min-width: 14px; }
+
+  .vote-breakdown { display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+  .vote-breakdown.visible { display: block; }
+  .vote-breakdown h4 { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.6rem; }
+  .vote-row { margin-bottom: 7px; }
+  .vote-row-top { display: flex; align-items: center; gap: 7px; margin-bottom: 3px; }
+  .vote-lbl { font-size: 11px; font-weight: 700; color: var(--text); min-width: 16px; }
+  .vote-bar-wrap { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .vote-bar { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.4s ease; }
+  .vote-count { font-size: 10px; color: var(--text-muted); min-width: 50px; text-align: right; }
+  .voter-dots { display: flex; gap: 3px; padding-left: 23px; flex-wrap: wrap; margin-top: 2px; }
+  .voter-dot { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 7px; font-weight: 700; color: white; cursor: default; }
+
+  .comments-section { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+  .comments-section h4 { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.6rem; }
+  .comment-item { display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-start; }
+  .comment-avatar { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; color: white; }
+  .comment-bubble { background: var(--bg); border: 1px solid var(--border); border-radius: 0 5px 5px 5px; padding: 5px 10px; font-size: 12px; line-height: 1.5; flex: 1; }
+  .comment-meta { font-size: 10px; color: var(--text-muted); margin-bottom: 1px; font-weight: 700; }
+  .comment-input-row { display: flex; gap: 6px; margin-top: 6px; }
+  .comment-input { flex: 1; padding: 6px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); font-size: 13px; color: var(--text); background: var(--bg); outline: none; resize: none; min-height: 34px; line-height: 1.4; }
+  .comment-input:focus { border-color: var(--accent); }
+  .btn-comment { background: var(--text); color: var(--bg); border: none; padding: 6px 12px; border-radius: var(--radius); font-size: 12px; cursor: pointer; white-space: nowrap; }
+  .btn-comment:hover { opacity: 0.8; }
+
+  .loading-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 999; flex-direction: column; gap: 12px; }
+  .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 13px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <div class="brand">Rzeczoznawca p.poż.</div>
+    <h1>Pytania egzaminacyjne</h1>
+    <p>Sesja 2024–2025 · Głosowanie grupowe</p>
+    <div class="color-preview" id="color-preview"></div>
+    <input type="text" id="name-input" placeholder="Twoje imię lub inicjały" maxlength="20" autocomplete="off" />
+    <button class="btn-primary" id="login-btn" onclick="login()">Wejdź i głosuj</button>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="logo">Egzamin Rzeczoznawcy</div>
+    <div class="user-badge">
+      <div class="sync-dot" id="sync-dot" title="Połączenie z bazą"></div>
+      <span id="header-name"></span>
+      <div class="user-dot" id="header-dot"></div>
+    </div>
+  </header>
+  <main>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="num" id="stat-total">0</div><div class="lbl">Pytań</div></div>
+      <div class="stat-card"><div class="num" id="stat-answered">0</div><div class="lbl">Moje odp.</div></div>
+      <div class="stat-card"><div class="num" id="stat-users">0</div><div class="lbl">Głosujących</div></div>
+      <div class="stat-card"><div class="num" id="stat-comments">0</div><div class="lbl">Komentarzy</div></div>
+    </div>
+    <input type="text" class="search-bar" id="search" placeholder="🔍  Szukaj pytania..." oninput="filterQuestions()" />
+    <div id="questions-container"></div>
+  </main>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+// ── FIREBASE CONFIG ───────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyC4LLDV4Avt4bDp74tNF97jASQPpQZZR4A",
+  authDomain: "test-rzeczoznawca.firebaseapp.com",
+  projectId: "test-rzeczoznawca",
+  storageBucket: "test-rzeczoznawca.firebasestorage.app",
+  messagingSenderId: "817646582037",
+  appId: "1:817646582037:web:c1c80185b0deba49d7911c"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ── DANE ──────────────────────────────────────────────────────────────────────
+const USER_COLORS = [
+  '#c0392b','#2980b9','#27ae60','#8e44ad','#d35400',
+  '#16a085','#e67e22','#2c3e50','#1abc9c','#e91e63',
+  '#3f51b5','#009688','#ff5722','#607d8b','#f39c12'
+];
+const LETTERS = ['a','b','c','d','e'];
+
+const QUESTIONS = [
+  // 2025
+  { year:'2025', text:'Nieizolowane termicznie i akustycznie elastyczne przewody wentylacyjne zastosowane jako elementy łączące do połączenia sztywnych przewodów wentylacyjnych z urządzeniami wentylacyjnymi innymi niż wentylatory, które posiadają długość 3 m, powinny być wykonane z materiałów co najmniej:', answers:['niepalnych','niezapalnych','trudno zapalnych'] },
+  { year:'2025', text:'Zgodnie z PN-B 02877-4:2025-07, efektywna powierzchnia otworów napływu powietrza kompensacyjnego dostarczanego bezpośrednio z zewnątrz budynku do klatki schodowej w budynku średniowysokim, powinna być nie mniejsza niż:', answers:['łączna wymagana powierzchnia czynna oddymiania tej klatki schodowej','łączna powierzchnia geometryczna klap dymowych w tej klatce schodowej','130 % łącznej powierzchni czynnej oddymiania tej klatki schodowej'] },
+  { year:'2025', text:'W jednokondygnacyjnym budynku magazynowym o gęstości obciążenia ogniowego powyżej 4000 MJ/m², wykonanym z elementów nierozprzestrzeniających ognia oraz wyposażonym w samoczynne urządzenia oddymiające, w miejscu połączenia stropu antresoli przeznaczonej do użytku powyżej 10 osób ze ścianą zewnętrzną:', answers:['wymagany jest pas międzykondygnacyjny o wysokości co najmniej 0,8 m','wymagany jest pas międzykondygnacyjny o wysokości co najmniej 1,2 m','pas międzykondygnacyjny nie jest wymagany'] },
+  { year:'2025', text:'Do budynku magazynowego z największą strefą pożarową PM o powierzchni wewnętrznej 980 m² i całkowitej 1020 m² oraz gęstości obciążenia ogniowego 4000 MJ/m², bez pomieszczeń zagrożonych wybuchem, wymagane jest zapewnienie drogi pożarowej, która powinna umożliwiać przejazd pojazdów o nacisku osi na nawierzchnię jezdni co najmniej:', answers:['50 kN (kiloniutonów)','100 kN (kiloniutonów)','odpowiedzi w lit. a) i b) są nieprawidłowe, ponieważ budynek nie wymaga doprowadzenia drogi pożarowej'] },
+  { year:'2025', text:'W budynku mieszkalnym wielorodzinnym posiadającym 10 kondygnacji nadziemnych, dopuszcza się w obrębie jednego lokalu mieszkalnego stosowanie przewodów wentylacyjnych o klasie reakcji na ogień co najmniej E, pod warunkiem zainstalowania w miejscu przejścia przewodów wentylacyjnych przez przegrody wydzielające lokal mieszkalny:', answers:['zabezpieczenia ogniochronnego o klasie odporności ogniowej co najmniej EI 60','przeciwpożarowej klapy odcinającej o klasie odporności ogniowej co najmniej EIS 60','odpowiedzi w lit. a) i b) są nieprawidłowe'] },
+  { year:'2025', text:'W strefie pożarowej ZL III do wykończenia wnętrz pomieszczeń niestanowiących drogi komunikacji ogólnej, służącej celom ewakuacji, można stosować materiały o klasie reakcji na ogień i o wskaźniku toksykometrycznym (WLC50SM):', answers:['D-s2, d0; WLC50SM ≤ 15','D-s2, d0; 15 < WLC50SM ≤ 40','E-d2; WLC50SM > 40'] },
+  { year:'2025', text:'Uzgodnienia pod względem zgodności z wymaganiami ochrony przeciwpożarowej nie wymaga projekt techniczny wchodzący w skład projektu budowlanego:', answers:['budynku niskiego (N) zawierającego strefę pożarową o powierzchni 1500 m², zakwalifikowaną do kategorii zagrożenia ludzi ZL III, obejmującą kondygnację nadziemną inną niż pierwsza','obiektu budowlanego innego niż budynek, przeznaczonego do użyteczności publicznej, w którym przewiduje się możliwość jednoczesnego przebywania w strefie pożarowej 80 osób na powierzchni 1800 m²','tunelu technologicznego o długości ponad 100 m nieprzeznaczonego do ruchu pojazdów lub pieszych'] },
+  { year:'2025', text:'W strefie pożarowej z odpadami stałymi znajdującej się poza budynkiem, chronionej przez stałe samoczynne urządzenie gaśnicze wodne, maksymalna dopuszczalna powierzchnia sekcji magazynowej o gęstości obciążenia ogniowego 1000 MJ/m² wynosi:', answers:['600 m²','800 m²','1000 m²'] },
+  { year:'2025', text:'Zgodnie z PKN-CEN/TS 54-14:2020, odległość punktowej czujki dymu od ściany pomieszczenia użytkowego nie może wynosić więcej niż:', answers:['3,2 m','4,4 m','6,4 m'] },
+  { year:'2025', text:'Maksymalna dopuszczalna powierzchnia strefy pożarowej podziemnego garażu zamkniętego, w której zastosowano stałe samoczynne urządzenia gaśnicze wodne oraz instalację wentylacji oddymiającej uruchamianą za pomocą systemu wykrywania dymu, wynosi:', answers:['5 000 m²','10 000 m²','12 500 m²'] },
+  { year:'2025', text:'Droga pożarowa do budynku produkcyjnego z pomieszczeniem zagrożonym wybuchem, stanowiącego jedną strefę pożarową o gęstości obciążenia ogniowego 400 MJ/m² i powierzchni 12 000 m², w miejscu jej przebiegu wzdłuż dłuższego boku budynku powinna posiadać szerokość co najmniej:', answers:['3,5 m','4 m','odpowiedzi w lit. a) i b) są nieprawidłowe – do budynku nie wymaga się doprowadzenia drogi pożarowej'] },
+  { year:'2025', text:'W budynku hali sportowej o wysokości 14 m i jednej kondygnacji nadziemnej, w której może jednocześnie przebywać 100 osób niebędących jej stałymi użytkownikami, belki wykonane z drewna klejonego warstwowo, stanowiące konstrukcję dachu, powinny spełniać łącznie co najmniej następujące wymagania:', answers:['klasa odporności ogniowej R 30, wymiary przekroju poprzecznego 14 cm, klasa reakcji na ogień D-s1,d0','klasa odporności ogniowej R 15, wymiary przekroju poprzecznego 14 cm, klasa reakcji na ogień D-s1,d0','klasa odporności ogniowej R 30, wymiary przekroju poprzecznego 12 cm, klasa reakcji na ogień D-s2,d0'] },
+  { year:'2025', text:'Liczba zbiorników podziemnych z gazem płynnym o pojemności 10 m³ każdy, służących do magazynowania gazu płynnego w stacji paliw płynnych, nie może być większa niż:', answers:['1','2','4'] },
+  { year:'2025', text:'Zgodnie z PN-EN 13501-4:2016-07, klasyfikacja HOT 400/30 w przypadku ognioodpornej klapy odcinającej do wielostrefowych systemów kontroli rozprzestrzeniania się dymu oznacza, że:', answers:['przyrost temperatury po stronie nienagrzewanej jest nie większy niż 400°C','klapa odcinająca ma zdolność do wykonania 30 cykli otwierania i zamykania w warunkach oddziaływania temperatury niższej niż 400°C','klapa odcinająca ma zdolność do otwierania i zamykania przez 30 minut w warunkach oddziaływania temperatury niższej niż 400°C'] },
+  { year:'2025', text:'Budynek tymczasowy średniowysoki (SW) stanowiący jedną strefę pożarową o powierzchni 2500 m², w którym przewiduje się możliwość jednoczesnego przebywania 60 osób niebędących jego stałymi użytkownikami, powinien być wyposażony w:', answers:['instalację wodociągową przeciwpożarową z hydrantami 25','instalację wodociągową przeciwpożarową z hydrantami 52','odpowiedzi w lit. a) i b) są nieprawidłowe'] },
+  { year:'2025', text:'Zgodnie z PN-B-02857:2017-04, w przypadku przeciwpożarowego zbiornika wodnego o pojemności 300 m³ zasilanego z innego źródła niż sieć wodociągowa przeciwpożarowa, źródło zasilające powinno napełnić cały zbiornik po jego opróżnieniu w czasie nie dłuższym niż:', answers:['36 h','48 h','72 h'] },
+  { year:'2025', text:'Klatki schodowe stanowiące drogi ewakuacyjne w budynku o wysokości 28 m przeznaczonym do zakwaterowania osób osadzonych:', answers:['powinny być wyposażone w urządzenia zapobiegające zadymieniu lub służące do usuwania dymu, uruchamiane samoczynnie za pomocą systemu wykrywania dymu','powinny być wyposażone w urządzenia zapobiegające ich zadymieniu','nie muszą być wyposażone w urządzenia zapobiegające zadymieniu lub służące do usuwania dymu'] },
+  { year:'2025', text:'W budynku hotelu o wysokości 60 m:', answers:['dopuszcza się prowadzenie ewakuacji tylko do jednej klatki schodowej, jeżeli powierzchnia wewnętrzna kondygnacji nie przekracza 750 m²','dopuszcza się prowadzenie ewakuacji tylko do jednej klatki schodowej na kondygnacji stanowiącej odrębną strefę pożarową PM','należy zapewnić możliwość ewakuacji do co najmniej dwóch klatek schodowych'] },
+  { year:'2025', text:'W dwukondygnacyjnym budynku produkcyjnym o wysokości 27 m, stanowiącym jedną strefę pożarową o gęstości obciążenia ogniowego 1800 MJ/m², w którym zastosowano stałe samoczynne urządzenia gaśnicze wodne oraz samoczynne urządzenia oddymiające, strop antresoli przeznaczonej do użytku 30 osób powinien mieć klasę odporności ogniowej co najmniej:', answers:['REI 15','REI 30','REI 60'] },
+  { year:'2025', text:'W budynku biurowym wysokim (W), w którym każda kondygnacja o powierzchni wewnętrznej 1500 m² stanowi odrębną strefę pożarową, do zasilania w wodę instalacji wodociągowej przeciwpożarowej może być zastosowany zbiornik o pojemności 30 m³, w przypadku:', answers:['zapewnienia jego zasilania w wodę z zewnętrznej sieci wodociągowej przeciwpożarowej o wydajności nie mniejszej niż 10 dm³/s','zapewnienia jego zasilania w wodę z zewnętrznej sieci wodociągowej przeciwpożarowej o wydajności nie mniejszej niż 15 dm³/s','odpowiedzi w lit. a) i b) są nieprawidłowe – nie uwzględniają wymogu dotyczącego wyprowadzenia w elewacji budynku nasady o średnicy 75 mm'] },
+  { year:'2025', text:'Minimalna dopuszczalna odległość budynku biurowego o wysokości 18 m, chronionego przez stałe samoczynne urządzenia gaśnicze wodne, od dwukondygnacyjnego budynku PM o wysokości 9 m i gęstości obciążenia ogniowego 3500 MJ/m², wynosi:', answers:['11,25 m','15 m','22,5 m'] },
+  { year:'2025', text:'Wydajność wentylacji służącej do usuwania dymu i ciepła z tunelu służącego do przeprowadzenia drogi publicznej, w którym do ruchu pojazdów dopuszczono autobusy oraz inne pojazdy o masie całkowitej do 20 t, powinna być ustalona przy uwzględnieniu całkowitej mocy pożaru projektowego nie mniejszej niż:', answers:['5 MW','30 MW','50 MW'] },
+  { year:'2025', text:'Maksymalna dopuszczalna powierzchnia strefy pożarowej PM o gęstości obciążenia ogniowego 1000 MJ/m² z pomieszczeniem zagrożonym wybuchem, wyposażonej w samoczynne urządzenia oddymiające, obejmującej wyłącznie najwyższą kondygnację nadziemną w trzykondygnacyjnym budynku PM o wysokości 13 m, wynosi:', answers:['2000 m²','3000 m²','4000 m²'] },
+  { year:'2025', text:'Sieć wodociągowa przeciwpożarowa zasilana ze zbiornika wieżowego powinna zapewniać:', answers:['wydajność nie mniejszą niż 5 dm³/s i ciśnienie w hydrancie zewnętrznym nie mniejsze niż 0,1 MPa, przez co najmniej 1 godzinę','wydajność nie mniejszą niż 5 dm³/s i ciśnienie w hydrancie zewnętrznym nie mniejsze niż 0,1 MPa, przez co najmniej 2 godziny','wydajność nie mniejszą niż 10 dm³/s i ciśnienie w hydrancie zewnętrznym nie mniejsze niż 0,2 MPa, przez co najmniej 2 godziny'] },
+  { year:'2025', text:'Dla zapewnienia możliwości intensywnego czerpania wody do celów przeciwpożarowych na sieciach wodociągowych o średnicy nominalnej nie mniejszej niż DN 250 powinny być instalowane hydranty nadziemne, spełniające następujące wymaganie:', answers:['średnica nominalna hydrantu powinna wynosić DN 125 na sieci rozgałęzieniowej','wydajność nominalna przy ciśnieniu nominalnym 0,2 MPa mierzonym na zaworze hydrantowym podczas poboru wody nie może być mniejsza niż 15 dm³/s','przy hydrancie należy przewidzieć stanowisko czerpania wody o wymiarach zapewniających swobodny dostęp do hydrantu'] },
+  { year:'2025', text:'Elementami systemu sygnalizacji pożarowej, które nie wymagają uzyskania dopuszczenia do użytkowania w formie świadectwa dopuszczenia wydanego przez CNBOP-PIB są:', answers:['czujki punktowe dymu','sygnalizatory optyczne','ręczne ostrzegacze pożarowe'] },
+  { year:'2025', text:'Zgodnie z PN-EN 12845+A1:2020, hydrofor stosowany jako pojedyncze zasilanie wodą, powinien być wyposażony w urządzenia do automatycznego utrzymywania ciśnienia powietrza i poziomu wody, które powinny być w stanie całkowicie napełnić hydrofor w czasie nie dłuższym niż:', answers:['4 godziny','8 godzin','12 godzin'] },
+  { year:'2025', text:'Wymagana pojemność zbiornika wody do celów przeciwpożarowych do zewnętrznego gaszenia pożaru dla strefy pożarowej z odpadami stałymi poza budynkiem, o powierzchni 1500 m² i gęstości obciążenia ogniowego 1000 MJ/m², w przypadku braku możliwości zapewnienia wymaganej ilości wody z sieci wodociągowej, wynosi:', answers:['200 m³','288 m³','100 m³'] },
+  { year:'2025', text:'Zapewnienie dojścia i dojazdu, przystosowanych do prowadzenia działań ratowniczych przez jednostki ochrony przeciwpożarowej, jest wymagane do budowli rolniczej, w której:', answers:['występuje strefa pożarowa o gęstości obciążenia ogniowego 2000 MJ/m² i powierzchni 800 m²','występuje strefa pożarowa o gęstości obciążenia ogniowego 800 MJ/m² i powierzchni 2000 m²','występuje wewnątrz budowli strefa zagrożenia wybuchem, a gęstość obciążenia ogniowego wynosi 400 MJ/m²'] },
+  { year:'2025', text:'Zgodnie z PN-EN 1838:2025-05, poziom natężenia oświetlenia w przypadku strefy otwartej, z wyłączeniem obwodowego pasa o szerokości 0,5 m, powinien wynosić na poziomie podłogi co najmniej:', answers:['0,5 lx','0,5 lx, z wyjątkiem pomieszczeń audytoriów, sal konferencyjnych, czytelni, lokali rozrywkowych oraz sal sportowych, przeznaczonych dla ponad 200 osób, w obrębie których natężenie to powinno wynosić co najmniej 5 lx','0,5 lx, z wyjątkiem pomieszczeń audytoriów, sal konferencyjnych, czytelni, lokali rozrywkowych oraz sal sportowych, przeznaczonych dla ponad 200 osób, w obrębie których natężenie to powinno wynosić co najmniej 15 lx'] },
+  { year:'2025', text:'Zgodnie z PN-EN 12101-13:2022-09, w projektowanym budynku biurowym wysokościowym (WW) chronionym przez instalację tryskaczową z tryskaczami o temperaturze zadziałania 68° i RTI < 50, należy zastosować system różnicowania ciśnień, zapewniający:', answers:['różnicę ciśnień pomiędzy klatką schodową a przestrzenią użytkową co najmniej 50 Pa oraz prędkość przepływu powietrza przez otwór drzwiowy co najmniej 2 m/s','różnicę ciśnień pomiędzy klatką schodową a przestrzenią użytkową co najmniej 30 Pa oraz prędkość przepływu powietrza przez otwór drzwiowy co najmniej 2 m/s','różnicę ciśnień pomiędzy klatką schodową a przestrzenią użytkową co najmniej 30 Pa oraz prędkość przepływu powietrza przez otwór drzwiowy co najmniej 1 m/s'] },
+  { year:'2025', text:'Zgodnie z PKN-CEN/TS 54-14:2020, odległość punktowej czujki ciepła od otworu wentylacji nawiewnej, w którym prędkość nawiewanego powietrza do pomieszczenia wynosi więcej niż 1 m/s, nie może być mniejsza niż:', answers:['0,5 m','1 m','odpowiedzi w lit. a) i b) są nieprawidłowe – wymagania dotyczące minimalnej odległości czujki punktowej od otworu wentylacyjnego nie dotyczą czujek ciepła'] },
+  { year:'2025', text:'W przypadku tunelu służącego do przeprowadzenia drogi publicznej, wymagana w nim wentylacja mechaniczna wykorzystywana do usuwania dymu i ciepła, powinna zapewniać prędkość przepływu powietrza w tunelu:', answers:['nie większą niż 5 m/s','większą niż 10 m/s','nie większą niż 10 m/s'] },
+  { year:'2025', text:'Zgodnie z PN-EN 12845+A1:2020, tryskacze wiszące nie powinny być przyłączane bezpośrednio do przewodów o średnicy większej niż:', answers:['50 mm w przypadku przewodów z izolacją','65 mm','80 mm'] },
+  { year:'2025', text:'Zgodnie z PN-EN 12845+A1:2020, źródło wody powinno być w stanie ponownie napełnić zbiornik z zapasem wody dla urządzeń tryskaczowych OH:', answers:['w czasie nie dłuższym niż 24 godziny','w czasie nie dłuższym niż 36 godzin','do 50% w czasie nie dłuższym niż 48 godzin'] },
+  { year:'2025', text:'Zgodnie z PN-EN 15004-1:2025-05, urządzenie zatrzymujące (przycisk „Stop Gaszenia") należy lokalizować:', answers:['wewnątrz i na zewnątrz zabezpieczanego pomieszczenia, przy wejściu do pomieszczenia oraz przy wyjściu ewakuacyjnym z pomieszczenia','na zewnątrz zabezpieczanego pomieszczenia, przy wejściu do pomieszczenia','wewnątrz zabezpieczanego pomieszczenia, przy wyjściu ewakuacyjnym z pomieszczenia'] },
+  { year:'2025', text:'W budynku użyteczności publicznej o wysokości 64 m, zakwalifikowanym do kategorii zagrożenia ludzi ZL III, biegi i spoczniki schodów klatki schodowej służącej do celów ewakuacji:', answers:['powinny być wykonane z materiałów niepalnych oraz mieć klasę odporności ogniowej co najmniej R 60','mogą być wykonane z materiałów palnych i powinny mieć klasę odporności ogniowej co najmniej R 60','powinny być wykonane z materiałów niepalnych, a nie dotyczą ich wymagania klasy odporności ogniowej'] },
+  { year:'2025', text:'Zbiorniki gazu płynnego znajdujące się na stacji gazu płynnego powinny być usytuowane w odległości od granicy lasu nie mniejszej niż:', answers:['10 m','20 m','30 m'] },
+  { year:'2025', text:'Zgodnie z PN-EN 81-72:2020-12, klapa awaryjna, służąca do uwalniania strażaków uwięzionych w kabinie dźwigu dla straży pożarnej o udźwigu nominalnym 630 kg, powinna posiadać wymiary otworu w świetle co najmniej:', answers:['0,4 m x 0,5 m','0,6 m x 0,6 m','0,5 m x 0,7 m'] },
+  { year:'2025', text:'Odległość zbiornika biogazu rolniczego od pomieszczeń przeznaczonych na pobyt ludzi znajdujących się w budynku produkcyjnym o gęstości obciążenia ogniowego 1000 MJ/m², powinna wynosić co najmniej:', answers:['8 m','15 m','20 m'] },
+  // 2024
+  { year:'2024', text:'Zgodnie z rozporządzeniem Ministra Cyfryzacji z dnia 4 grudnia 2019 r. w sprawie warunków technicznych dla podmiotów świadczących usługi z zakresu cyberbezpieczeństwa, budynek o jednej kondygnacji nadziemnej projektowany w całości do celów świadczenia usług z zakresu cyberbezpieczeństwa powinien być wykonany w klasie odporności pożarowej nie niższej niż:', answers:['D','C','B'] },
+  { year:'2024', text:'W budynku niskim muzeum awaryjne oświetlenie ewakuacyjne należy zastosować:', answers:['w pomieszczeniach wystawowych oraz na drogach ewakuacyjnych z tych pomieszczeń','w pomieszczeniach magazynowych zbiorów o powierzchni netto ponad 1000 m² oraz na drogach ewakuacyjnych z tych pomieszczeń oświetlonych wyłącznie światłem sztucznym','w pomieszczeniach, o których mowa w odpowiedzi lit. a) i b), oraz w pomieszczeniach konferencyjnych z siedzeniami ustawionymi w rzędach przeznaczonych dla ponad 200 osób i na drogach ewakuacyjnych z tych pomieszczeń'] },
+  { year:'2024', text:'W budynku średniowysokim stanowiącym dom dla osób starszych, wyposażonym w stałe samoczynne urządzenie gaśnicze wodne, dopuszczalne jest uwzględnienie tego urządzenia gaśniczego do:', answers:['obniżenia klasy odporności pożarowej budynku oraz powiększenia o 50% długości zarówno przejścia ewakuacyjnego, jak i dojścia ewakuacyjnego','powiększenia o 100% powierzchni strefy pożarowej','odpowiedzi w lit. a) i b) są prawidłowe'] },
+  { year:'2024', text:'Zgodnie z PKN CEN/TS 54-14:2020, w przypadku kwadratowego układu czujek na otwartym obszarze czujki ciepła w pomieszczeniu ze stropem płaskim, powinny być rozmieszczone od ściany lub głównej przeszkody w odległości nie większej niż:', answers:['2,25 m','3,2 m','4,5 m'] },
+  { year:'2024', text:'Zgodnie z załącznikiem nr 3 do rozporządzenia Ministra Infrastruktury z dnia 12 kwietnia 2002 r., przekrycia dachu klasy BROOF uznane za spełniające wymagania w zakresie odporności wyrobów na działanie ognia zewnętrznego, bez potrzeby przeprowadzenia badań, odpowiadają przekryciom:', answers:['nierozprzestrzeniającym ognia','słabo rozprzestrzeniającym ogień','silnie rozprzestrzeniającym ogień'] },
+  { year:'2024', text:'Zgodnie z PN-EN 15004-1:2019, czas utrzymywania stężenia gazu gaśniczego w pomieszczeniu serwerowni, w którym po wyładowaniu gazu będzie działała klimatyzacja w obiegu zamkniętym, kończy się, gdy stężenie gazu gaśniczego osiągnie w dowolnym miejscu pomieszczenia wartość:', answers:['niższą niż 80 % stężenia projektowego','niższą niż 85 % stężenia projektowego','odpowiedzi w lit. a) i b) nie są prawidłowe, ponieważ po wyładowaniu gazu gaśniczego klimatyzacja powinna być wyłączona'] },
+  { year:'2024', text:'Zgodnie z PN-EN 13501-2:2023, klasyfikacja elementów budowlanych z uwagi na promieniowanie (W) jest podawana jako czas, przez który maksymalna wartość promieniowania nie przekroczyła wartości:', answers:['8 kW/m²','12,5 kW/m²','15 kW/m²'] },
+  { year:'2024', text:'Uzgodnienie projektu urządzenia przeciwpożarowego z rzeczoznawcą do spraw zabezpieczeń przeciwpożarowych w przypadku jego sporządzenia w postaci elektronicznej potwierdza się przez opatrzenie go:', answers:['kwalifikowanym podpisem elektronicznym oraz wydaniem dla niego karty uzgodnienia opatrzonej tym podpisem, która stanowi załącznik do projektu','kwalifikowanym podpisem elektronicznym lub podpisem zaufanym oraz wydaniem dla niego karty uzgodnienia opatrzonej tym podpisem, która stanowi załącznik do projektu','odpowiedzi w lit. a) i b) są nieprawidłowe – obecnie nie jest dopuszczalne uzgodnienie projektu urządzenia przeciwpożarowego w postaci elektronicznej'] },
+  { year:'2024', text:'W budynku mieszkalnym wielorodzinnym o wysokości 14 m, posiadającym na ostatniej czwartej kondygnacji nadziemnej kotłownię gazową zasilaną z sieci gazowej, zastosowanie w mieszkaniach odrębnych instalacji gazowych zasilanych gazem płynnym jest:', answers:['niedopuszczalne','dopuszczalne przy zasilaniu indywidualnym z jednej butli o nominalnej zawartości gazu do 22 kg','dopuszczalne przy zasilaniu indywidualnym z maksymalnie dwóch butli o nominalnej zawartości gazu w butli do 11 kg'] },
+  { year:'2024', text:'Średniowysoki budynek garażu otwartego wielokondygnacyjnego z pomieszczeniami technicznymi nad najwyższą kondygnacją przeznaczoną do parkowania samochodów, w którym najwyższy poziom parkowania znajduje się na wysokości 20 m, powinien być wykonany w klasie odporności pożarowej:', answers:['co najmniej D, jeżeli poza pomieszczeniami technicznymi nad kondygnacją przeznaczoną do parkowania nie znajdują się inne pomieszczenia przeznaczone na pobyt ludzi','co najmniej C, jeżeli jest wykonany z elementów nierozprzestrzeniających ognia, niekapiących i nieodpadających pod wpływem ognia','odpowiedzi w lit. a) i b) są nieprawidłowe'] },
+  { year:'2024', text:'W obszarze miejskim sieć wodociągowa przeciwpożarowa, która służy nie tylko do celów przeciwpożarowych, może być wykonana jako sieć rozgałęzieniowa:', answers:['jeżeli przy wymaganej ilości wody do celów przeciwpożarowych przekraczającej 20 dm³/s zapewnione będzie zasilanie w dwóch punktach znajdujących się w możliwie największej odległości od siebie','jeżeli łączna wymagana ilość wody dla potrzeb przeciwpożarowych, bytowo-gospodarczych oraz przemysłowych jest nie większa niż 20 dm³/s','tylko w odgałęzieniach sieci obwodowej zasilających hydranty zewnętrzne'] },
+  { year:'2024', text:'Projektowany na terenie bazy paliw płynnych zbiornik naziemny z dachem stałym o pojemności 20 000 m³, przeznaczony do magazynowania produktów naftowych o temperaturze zapłonu 23°C powinien być wyposażony w:', answers:['stałe urządzenia gaśnicze pianowe i półstałe urządzenia zraszaczowe','półstałe urządzenia gaśnicze pianowe i stałe urządzenia zraszaczowe','stałe urządzenia gaśnicze pianowe i stałe urządzenia zraszaczowe'] },
+  { year:'2024', text:'Kable i przewody elektryczne oraz światłowodowe zainstalowane wewnątrz tunelu lub stacji metra muszą posiadać klasę reakcji na ogień:', answers:['co najmniej Bca-s3, d0, a produkty ich rozkładu termicznego kwasowość mniejszą niż pH 4,3','co najmniej B1ca-s1, d0, a1','co najmniej B2ca-s1, d0, a1'] },
+  { year:'2024', text:'W budynku mieszkalnym wielorodzinnym wysokościowym, w którym drogi ewakuacyjne są chronione przez stałe urządzenia gaśnicze uruchamiane samoczynnie za pomocą systemu wykrywania dymu, długość dojścia ewakuacyjnego mierzona przy jednym dojściu na poziomej drodze ewakuacyjnej, nie powinna przekraczać:', answers:['20 m','30 m','40 m'] },
+  { year:'2024', text:'Zgodnie z PN-B-02431-1:1999, sygnalizator akustyczny zastosowany w kotłowni z kotłami na paliwo gazowe o łącznej mocy cieplnej 100 kW powinien informować użytkowników budynku o przekroczeniu dopuszczalnego stężenia wynoszącego:', answers:['10 % dolnej granicy wybuchowości mieszaniny gazu z powietrzem','20 % dolnej granicy wybuchowości mieszaniny gazu z powietrzem','30 % dolnej granicy wybuchowości mieszaniny gazu z powietrzem'] },
+  { year:'2024', text:'Sieć wodociągowa stanowiąca źródło wody do celów przeciwpożarowych, w której łączna wymagana ilość wody przekracza 30 dm³/s, a długość obwodu wynosi 900 m, powinna być zasilana w dwóch punktach znajdujących się od siebie w odległości nie mniejszej niż:', answers:['125 m','225 m','325 m'] },
+  { year:'2024', text:'Doprowadzenie drogi pożarowej nie jest wymagane do:', answers:['niskiego dwukondygnacyjnego domu dla osób starszych o powierzchni strefy pożarowej 1000 m², która obejmuje kondygnację inną niż pierwsza','budynku średniowysokiego zawierającego strefę pożarową PM o powierzchni 2000 m² i gęstości obciążenia ogniowego 450 MJ/m², w którym nie występuje pomieszczenie zagrożone wybuchem','stanowiska czerpania wody do celów przeciwpożarowych'] },
+  { year:'2024', text:'Zgodnie z PN-EN 12845+A1:2020, kombinowane źródła zasilania wodą, które są projektowane w celu zasilania więcej niż jednego urządzenia do gaszenia pożaru, mogą być wykonane jako:', answers:['pojedyncze źródła zasilania wodą lub pojedyncze źródła zasilania wodą o zwiększonej niezawodności','pojedyncze źródła zasilania wodą o zwiększonej niezawodności lub podwójne źródła zasilania wodą','wyłącznie podwójne źródła zasilania wodą'] },
+  { year:'2024', text:'Zgodnie z PN-EN 12101-13:2022, w systemie klasy 1 prędkość przepływu powietrza w otworze drzwiowym na kondygnacji objętej pożarem powinna być nie mniejsza niż:', answers:['0,75 m/s','1 m/s','2 m/s'] },
+  { year:'2024', text:'Indywidualna dokumentacja techniczna wyrobu budowlanego, służącego zapewnieniu w obiekcie budowlanym wymagania podstawowego „Bezpieczeństwo pożarowe", sporządzona w ramach jego dopuszczenia do jednostkowego zastosowania powinna być sporządzona przez:', answers:['producenta wyrobu i musi być uzgodniona z rzeczoznawcą do spraw zabezpieczeń przeciwpożarowych','projektanta obiektu i musi być uzgodniona z rzeczoznawcą do spraw zabezpieczeń przeciwpożarowych','projektanta obiektu lub z nim uzgodniona'] },
+  { year:'2024', text:'Projektowany budynek domu pomocy społecznej, w którym przewidziano 80 miejsc przeznaczonych dla jego mieszkańców, powinien być wyposażony w:', answers:['system alarmu przeciwpożarowego wykonany w oparciu o autonomiczne czujki dymu','system sygnalizacji pożarowej, obejmujący urządzenia sygnalizacyjno-alarmowe, służące do samoczynnego wykrywania i przekazywania informacji o pożarze, a także urządzenia odbiorcze alarmów pożarowych i urządzenia odbiorcze sygnałów uszkodzeniowych','system sygnalizacji pożarowej, który nie musi być połączony z obiektem komendy Państwowej Straży Pożarnej lub innym obiektem wskazanym przez właściwego miejscowo komendanta powiatowego (miejskiego) PSP'] },
+  { year:'2024', text:'Zgodnie z rozporządzeniem Ministra Gospodarki z dnia 26 kwietnia 2013 r. w sprawie warunków technicznych, jakim powinny odpowiadać sieci gazowe i ich usytuowanie, pomieszczenie w tłoczni gazu, w którym znajdują się sprężarki gazu ziemnego, musi posiadać następujące urządzenia przeciwpożarowe:', answers:['system sygnalizacji pożarowej, a stosowanie stałego urządzenia gaśniczego nie jest wymagane','stałe urządzenie gaśnicze, a stosowanie systemu sygnalizacji pożarowej nie jest wymagane','system sygnalizacji pożarowej i stałe urządzenie gaśnicze'] },
+  { year:'2024', text:'Zgodnie z PKN-CEN/TS 54-14:2020, maksymalny dopuszczalny promień działania dodatkowej czujki liniowej dymu zainstalowanej na wysokości 10 m nad najbardziej prawdopodobnym miejscem wystąpienia pożaru w pomieszczeniu o wysokości 20 m, wynosi:', answers:['1,25 m','3,1 m','6,2 m'] },
+  { year:'2024', text:'Minimalna dopuszczalna odległość dwukondygnacyjnego niskiego budynku PM stanowiącego strefę pożarową PM o maksymalnej gęstości obciążenia ogniowego 3000 MJ/m², od niskiego budynku mieszkalnego wielorodzinnego, wynosi:', answers:['15 m','20 m','30 m'] },
+  { year:'2024', text:'Zgodnie z PKN-CEN/TS 54-14:2020, czujki ciepła rozmieszczone na stropie płaskim (poziomym) nie mogą być instalowane niżej niż:', answers:['150 mm poniżej stropu','300 mm poniżej stropu','600 mm poniżej stropu'] },
+  { year:'2024', text:'W budynku użyteczności publicznej w przestrzeni zagrożonej wybuchem, w której atmosfera wybuchowa zawierająca mieszaninę z powietrzem substancji palnych w postaci gazów, par lub mgieł może czasami wystąpić w trakcie normalnego działania, stosuje się urządzenia kategorii:', answers:['tylko 1','1 lub 2','1, 2 lub 3'] },
+  { year:'2024', text:'Zgodnie z PN-EN 12845+A1:2020, w przestrzeni magazynowej chronionej tryskaczami ESFR świetliki zainstalowane w płaszczyźnie sufitu, powinny:', answers:['posiadać klasę B300 30','wytrzymywać temperaturę wyższą od temperatury zadziałania tryskaczy o minimum 30 °C przez okres co najmniej 10 min.','wytrzymywać temperaturę 300 °C przez okres co najmniej 5 min.'] },
+  { year:'2024', text:'Pomieszczenie z cyklonami do palnych pyłów zlokalizowane w budynku niskim produkcyjnym o dwóch kondygnacjach nadziemnych i gęstości obciążenia ogniowego do 1000 MJ/m², powinno być wydzielone:', answers:['ścianami i stropami o klasie odporności ogniowej co najmniej EI 60 i zamykane drzwiami o klasie odporności ogniowej co najmniej EI 30','elementami oddzielenia przeciwpożarowego','ścianami odpornymi na parcie o wartości 15 kN/cm² – z uwagi na występujące zawsze w tym pomieszczeniu zagrożenie wybuchem'] },
+  { year:'2024', text:'W pomieszczeniu biurowym przeznaczonym do jednoczesnego przebywania nie więcej niż 6 osób dopuszczalne jest stosowanie wykładzin podłogowych sklasyfikowanych w zakresie klasy reakcji na ogień co najmniej:', answers:['Efl','Dfl-s2','Dfl-s1'] },
+  { year:'2024', text:'Zgodnie z PN-B-02877-4:2001/Az1:2006, otwory klap dymowych zainstalowanych w dachu budynku niższego powinny być usytuowane od ściany zewnętrznej przylegającego budynku wyższego (nierozprzestrzeniająca ognia, EI 30, bez otworów) w odległości co najmniej:', answers:['2,5 m','5 m','8 m'] },
+  { year:'2024', text:'Zgodnie z rozporządzeniem MSWiA z dnia 19 lutego 2020 r. w sprawie wymagań w zakresie ochrony przeciwpożarowej dla obiektów przeznaczonych do zbierania, magazynowania lub przetwarzania odpadów, w magazynie ciekłych odpadów palnych chronionym przez stałe samoczynne urządzenia gaśnicze, dopuszcza się zwiększenie ilości magazynowanych ciekłych odpadów w strefie pożarowej o:', answers:['50 %','100 %','200 %'] },
+  { year:'2024', text:'Zgodnie z PN-EN 13501-4:2016, klapa odcinająca sklasyfikowana jako C300 może być stosowana:', answers:['w mieszanych systemach kontroli rozprzestrzeniania dymu i wentylacji ogólnej, jako klapa regulacyjna','w mieszanych systemach kontroli rozprzestrzeniania dymu i wentylacji ogólnej, jako klapa nieregulacyjna','wyłącznie w systemach kontroli rozprzestrzeniania dymu'] },
+  { year:'2024', text:'Zgodnie z rozporządzeniem MSWiA z dnia 19 lutego 2020 r., w kontenerze magazynowym cieczy palnych o całkowitej objętości magazynowanych ciekłych odpadów palnych wynoszącej 10 m³, w którym ciecze palne magazynowane są w zbiornikach przenośnych o pojemności 1 m³, pojemność netto rozwiązania ograniczającego rozlewisko nie powinna być mniejsza niż:', answers:['1 m³','1,1 m³','11 m³'] },
+  { year:'2024', text:'Przeciwpożarowy zbiornik wodny podziemny, stanowiący źródło wody do zewnętrznego gaszenia pożaru budynku magazynowego ze strefą pożarową PM o powierzchni 2000 m² i gęstości obciążenia ogniowego 4000 MJ/m², powinien posiadać co najmniej:', answers:['jedno stanowisko czerpania wody','dwa stanowiska czerpania wody','trzy stanowiska czerpania wody'] },
+  { year:'2024', text:'Zastosowany w budynku użyteczności publicznej wysokościowym dźwig dla ekip ratowniczych o wysokości toru jazdy 120 m, powinien docierać od poziomu dostępu dla straży pożarnej do najwyższego przystanku w czasie:', answers:['60 s mierzonym od chwili zamknięcia drzwi dźwigu','60 s mierzonym od chwili uruchomienia łącznika dźwigu','120 s mierzonym od chwili wysterowania kabinowego łącznika kluczykowego'] },
+  { year:'2024', text:'W kinie posiadającym 5 pomieszczeń widowni, w którym każde z tych pomieszczeń stanowi odrębną strefę pożarową ZL I z liczbą miejsc na widowni 150, wymagane jest zastosowanie:', answers:['systemu sygnalizacji pożarowej, a zastosowanie dźwiękowego systemu ostrzegawczego nie jest wymagane','awaryjnego oświetlenia ewakuacyjnego, a zastosowanie systemu sygnalizacji pożarowej i dźwiękowego systemu ostrzegawczego nie jest wymagane','systemu sygnalizacji pożarowej, dźwiękowego systemu ostrzegawczego oraz awaryjnego oświetlenia ewakuacyjnego'] },
+  { year:'2024', text:'Odległość odmierzacza paliw płynnych od budynku mieszkalnego wielorodzinnego o konstrukcji niepalnej, który od strony stacji paliw posiada ścianę oddzielenia przeciwpożarowego o klasie odporności ogniowej REI 60, powinna wynosić co najmniej:', answers:['10 m','20 m','30 m'] },
+  { year:'2024', text:'Zbiornik podziemny z gazem płynnym o nominalnej pojemności 30 000 dm³, zasilający instalację gazową w budynku, powinien być usytuowany od granicy działki budowlanej w odległości nie mniejszej niż:', answers:['5 m','10 m','15 m'] },
+  { year:'2024', text:'W pomieszczeniu zagrożonym wybuchem, nad którym jest zastosowany dach wykonany z materiałów trudno zapalnych, o masie 80 kg/m² rzutu, łączna powierzchnia urządzeń odciążających (przeciwwybuchowych) może wynosić:', answers:['0,05 m²/m³ kubatury pomieszczenia','0,06 m²/m³ kubatury pomieszczenia','0,07 m²/m³ kubatury pomieszczenia'] },
+  { year:'2024', text:'Jednokondygnacyjny budynek galerii handlowo-usługowej o powierzchni wewnętrznej 15 000 m², z kinem o liczbie miejsc 400 i lokalami gastronomicznymi o łącznej liczbie miejsc wynoszącej 500, w którym jako odrębną strefę pożarową wydzielono lokal handlowy (market) o powierzchni 7 500 m²:', answers:['musi być wyposażony w dźwiękowy system ostrzegawczy, a nie wymaga wyposażenia w stałe samoczynne urządzenie gaśnicze wodne','musi być wyposażony w stałe samoczynne urządzenie gaśnicze wodne, a nie wymaga wyposażenia w dźwiękowy system ostrzegawczy','nie wymaga wyposażenia w stałe samoczynne urządzenie gaśnicze wodne, ani w dźwiękowy system ostrzegawczy'] }
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let currentUser = null;
+let currentColor = null;
+let unsubscribers = {};
+
+function getUserColor(name) {
+  let h = 0;
+  for (let c of name) h = (h * 31 + c.charCodeAt(0)) % USER_COLORS.length;
+  return USER_COLORS[h];
+}
+function initials(name) {
+  return name.split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);
+}
+function qId(year, idx) { return year + '_' + idx; }
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+const nameInput = document.getElementById('name-input');
+const colorPreview = document.getElementById('color-preview');
+colorPreview.style.background = '#ccc';
+
+nameInput.addEventListener('input', () => {
+  const n = nameInput.value.trim();
+  colorPreview.style.background = n ? getUserColor(n) : '#ccc';
+});
+nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+
+function login() {
+  const name = nameInput.value.trim();
+  if (!name) { nameInput.focus(); return; }
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true;
+  btn.textContent = 'Łączenie...';
+
+  currentUser = name;
+  currentColor = getUserColor(name);
+
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('header-name').textContent = name;
+  const hd = document.getElementById('header-dot');
+  hd.style.background = currentColor;
+  hd.textContent = initials(name);
+
+  renderAll();
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function renderAll() {
+  const container = document.getElementById('questions-container');
+  container.innerHTML = '';
+  document.getElementById('stat-total').textContent = QUESTIONS.length;
+
+  const years = [...new Set(QUESTIONS.map(q=>q.year))].sort((a,b)=>b-a);
+  let globalIdx = 0;
+
+  years.forEach(year => {
+    const qs = QUESTIONS.filter(q=>q.year===year);
+    const sec = document.createElement('div');
+    sec.className = 'section-header';
+    sec.dataset.year = year;
+    sec.textContent = `Sesja ${year} — ${qs.length} pytań`;
+    container.appendChild(sec);
+
+    qs.forEach((q, localIdx) => {
+      globalIdx++;
+      const id = qId(year, localIdx);
+      const card = buildCard(q, id, globalIdx);
+      card.dataset.year = year;
+      card.dataset.text = q.text.toLowerCase();
+      container.appendChild(card);
+      subscribeToQuestion(id, q);
+    });
+  });
+}
+
+function buildCard(q, id, num) {
+  const card = document.createElement('div');
+  card.className = 'q-card';
+  card.id = 'card-' + id;
+
+  const header = document.createElement('div');
+  header.className = 'q-header';
+  header.onclick = () => card.classList.toggle('open');
+
+  const numEl = document.createElement('div');
+  numEl.className = 'q-num';
+  numEl.textContent = String(num).padStart(2,'0');
+
+  const textWrap = document.createElement('div');
+  textWrap.style.flex = '1';
+  const textEl = document.createElement('div');
+  textEl.className = 'q-text';
+  textEl.textContent = q.text;
+  const statusRow = document.createElement('div');
+  statusRow.className = 'q-status-row';
+  statusRow.id = 'status-' + id;
+  textWrap.appendChild(textEl);
+  textWrap.appendChild(statusRow);
+
+  const chevron = document.createElement('div');
+  chevron.className = 'q-chevron';
+  chevron.textContent = '▾';
+
+  header.appendChild(numEl);
+  header.appendChild(textWrap);
+  header.appendChild(chevron);
+  card.appendChild(header);
+
+  const body = document.createElement('div');
+  body.className = 'q-body';
+
+  const ul = document.createElement('ul');
+  ul.className = 'answers-list';
+  q.answers.forEach((ans, idx) => {
+    const li = document.createElement('li');
+    const btn = document.createElement('button');
+    btn.className = 'answer-btn';
+    btn.dataset.idx = idx;
+    btn.innerHTML = `<span class="answer-letter">${LETTERS[idx]})</span><span>${ans}</span>`;
+    btn.onclick = () => castVote(id, idx, q);
+    li.appendChild(btn);
+    ul.appendChild(li);
+  });
+  body.appendChild(ul);
+
+  const breakdown = document.createElement('div');
+  breakdown.className = 'vote-breakdown';
+  breakdown.id = 'breakdown-' + id;
+  body.appendChild(breakdown);
+
+  const commSec = document.createElement('div');
+  commSec.className = 'comments-section';
+  commSec.innerHTML = '<h4>Komentarze</h4>';
+  const clist = document.createElement('div');
+  clist.id = 'clist-' + id;
+  clist.innerHTML = '<p style="font-size:11px;color:var(--text-muted);margin-bottom:6px">Brak komentarzy</p>';
+  commSec.appendChild(clist);
+
+  const inputRow = document.createElement('div');
+  inputRow.className = 'comment-input-row';
+  const ta = document.createElement('textarea');
+  ta.className = 'comment-input';
+  ta.placeholder = 'Dodaj komentarz...';
+  ta.rows = 1;
+  const btnC = document.createElement('button');
+  btnC.className = 'btn-comment';
+  btnC.textContent = 'Dodaj';
+  btnC.onclick = () => addComment(id, ta);
+  inputRow.appendChild(ta);
+  inputRow.appendChild(btnC);
+  commSec.appendChild(inputRow);
+  body.appendChild(commSec);
+
+  card.appendChild(body);
+  return card;
+}
+
+// ── FIRESTORE REALTIME ────────────────────────────────────────────────────────
+function subscribeToQuestion(id, q) {
+  if (unsubscribers[id]) unsubscribers[id]();
+  const unsub = db.collection('questions').doc(id)
+    .onSnapshot(doc => {
+      const data = doc.exists ? doc.data() : { votes: {}, comments: [] };
+      updateCardUI(id, q, data);
+      updateStats();
+      document.getElementById('sync-dot').classList.remove('off');
+    }, err => {
+      console.error(err);
+      document.getElementById('sync-dot').classList.add('off');
+    });
+  unsubscribers[id] = unsub;
+}
+
+function updateCardUI(id, q, data) {
+  const votes = data.votes || {};
+  const comments = data.comments || [];
+  const myVote = votes[currentUser];
+  const hasVoted = myVote !== undefined;
+
+  // Status row
+  const statusRow = document.getElementById('status-' + id);
+  if (statusRow) {
+    statusRow.innerHTML = '';
+    if (hasVoted) {
+      const tag = document.createElement('span');
+      tag.className = 'answered-tag';
+      tag.textContent = '✓ ' + LETTERS[myVote] + ') odpowiedziałem';
+      statusRow.appendChild(tag);
+    }
+    Object.entries(votes).forEach(([user, ans]) => {
+      const dot = document.createElement('div');
+      dot.className = 'status-dot';
+      dot.style.background = getUserColor(user);
+      dot.title = `${user}: ${LETTERS[ans]}`;
+      statusRow.appendChild(dot);
+    });
+  }
+
+  // Answer buttons highlight
+  const card = document.getElementById('card-' + id);
+  if (card) {
+    card.querySelectorAll('.answer-btn').forEach(btn => {
+      btn.classList.toggle('selected-mine', hasVoted && parseInt(btn.dataset.idx) === myVote);
+    });
+
+    // Breakdown
+    const breakdown = document.getElementById('breakdown-' + id);
+    if (breakdown) {
+      if (hasVoted) {
+        breakdown.classList.add('visible');
+        renderBreakdown(breakdown, q, votes);
+      }
+    }
+
+    // Comments
+    const clist = document.getElementById('clist-' + id);
+    if (clist) renderCommentList(clist, comments);
+  }
+}
+
+function renderBreakdown(el, q, votes) {
+  const total = Object.keys(votes).length;
+  el.innerHTML = `<h4>Głosy (${total} osób)</h4>`;
+  q.answers.forEach((ans, idx) => {
+    const voters = Object.entries(votes).filter(([,v])=>v===idx);
+    const pct = total > 0 ? Math.round(voters.length/total*100) : 0;
+    const row = document.createElement('div');
+    row.className = 'vote-row';
+    row.innerHTML = `<div class="vote-row-top">
+      <span class="vote-lbl">${LETTERS[idx]})</span>
+      <div class="vote-bar-wrap"><div class="vote-bar" style="width:${pct}%"></div></div>
+      <span class="vote-count">${voters.length > 0 ? voters.length+' ('+pct+'%)' : '–'}</span>
+    </div>`;
+    if (voters.length > 0) {
+      const dotRow = document.createElement('div');
+      dotRow.className = 'voter-dots';
+      voters.forEach(([user]) => {
+        const d = document.createElement('div');
+        d.className = 'voter-dot';
+        d.style.background = getUserColor(user);
+        d.title = user;
+        d.textContent = initials(user);
+        dotRow.appendChild(d);
+      });
+      row.appendChild(dotRow);
+    }
+    el.appendChild(row);
+  });
+}
+
+function renderCommentList(el, comments) {
+  if (!comments || comments.length === 0) {
+    el.innerHTML = '<p style="font-size:11px;color:var(--text-muted);margin-bottom:6px">Brak komentarzy</p>';
+    return;
+  }
+  el.innerHTML = '';
+  comments.forEach(c => {
+    const item = document.createElement('div');
+    item.className = 'comment-item';
+    const av = document.createElement('div');
+    av.className = 'comment-avatar';
+    av.style.background = c.color || getUserColor(c.user);
+    av.textContent = initials(c.user);
+    const bubble = document.createElement('div');
+    bubble.className = 'comment-bubble';
+    bubble.innerHTML = `<div class="comment-meta">${c.user}</div><div>${c.text}</div>`;
+    item.appendChild(av);
+    item.appendChild(bubble);
+    el.appendChild(item);
+  });
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────────
+async function castVote(id, ansIdx, q) {
+  try {
+    await db.collection('questions').doc(id).set({
+      [`votes.${currentUser}`]: ansIdx
+    }, { merge: true });
+  } catch(e) { console.error('Błąd głosowania:', e); }
+}
+
+async function addComment(id, ta) {
+  const txt = ta.value.trim();
+  if (!txt) return;
+  ta.value = '';
+  try {
+    const docRef = db.collection('questions').doc(id);
+    const doc = await docRef.get();
+    const existing = doc.exists ? (doc.data().comments || []) : [];
+    existing.push({ user: currentUser, color: currentColor, text: txt, ts: Date.now() });
+    await docRef.set({ comments: existing }, { merge: true });
+  } catch(e) { console.error('Błąd komentarza:', e); }
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+function updateStats() {
+  let answered = 0, comments = 0;
+  const users = new Set();
+  const years = [...new Set(QUESTIONS.map(q=>q.year))];
+  years.forEach(year => {
+    QUESTIONS.filter(q=>q.year===year).forEach((q, localIdx) => {
+      const id = qId(year, localIdx);
+      const card = document.getElementById('card-' + id);
+      if (!card) return;
+      const statusRow = document.getElementById('status-' + id);
+      if (statusRow) {
+        statusRow.querySelectorAll('.status-dot').forEach(d => {
+          if (d.title) users.add(d.title.split(':')[0].trim());
+        });
+        if (statusRow.querySelector('.answered-tag')) answered++;
+      }
+      const clist = document.getElementById('clist-' + id);
+      if (clist) comments += clist.querySelectorAll('.comment-item').length;
+    });
+  });
+  document.getElementById('stat-answered').textContent = answered;
+  document.getElementById('stat-users').textContent = users.size;
+  document.getElementById('stat-comments').textContent = comments;
+}
+
+// ── SEARCH ────────────────────────────────────────────────────────────────────
+function filterQuestions() {
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  document.querySelectorAll('.q-card').forEach(card => {
+    card.style.display = (!q || card.dataset.text.includes(q)) ? '' : 'none';
+  });
+  document.querySelectorAll('.section-header').forEach(sec => {
+    const year = sec.dataset.year;
+    const any = [...document.querySelectorAll(`.q-card[data-year="${year}"]`)].some(c=>c.style.display!=='none');
+    sec.style.display = any ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>
