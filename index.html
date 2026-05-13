@@ -268,28 +268,42 @@ nameInput.addEventListener('input', () => {
 nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
 
 async function loadExistingUsers() {
-  const snapshot = await db.collection('questions').get();
-  const users = new Set();
-  snapshot.forEach(doc => {
-    const data = doc.data();
-    if (data.votes) {
-      Object.keys(data.votes).forEach(user => users.add(user));
-    }
-  });
-
   const container = document.getElementById('existing-users');
-  container.innerHTML = ''; // Czyść przed ładowaniem
-  users.forEach(user => {
-    const btn = document.createElement('button');
-    btn.className = 'btn-comment';
-    btn.style.padding = '8px 15px';
-    btn.textContent = user;
-    btn.onclick = () => {
-      document.getElementById('name-input').value = user;
-      login();
-    };
-    container.appendChild(btn);
-  });
+  container.innerHTML = '<p style="font-size:10px; color:var(--text-muted);">Ładowanie osób...</p>';
+
+  try {
+    const snapshot = await db.collection('questions').get();
+    const users = new Set();
+    
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.votes) {
+        Object.keys(data.votes).forEach(user => users.add(user));
+      }
+    });
+
+    container.innerHTML = ''; // Czyścimy komunikat ładowania
+
+    if (users.size === 0) {
+      container.innerHTML = '<p style="font-size:10px; color:var(--text-muted);">Brak zapisanych osób. Głosuj jako pierwszy!</p>';
+    }
+
+    users.forEach(user => {
+      const btn = document.createElement('button');
+      btn.className = 'btn-comment';
+      btn.style.margin = '4px';
+      btn.style.padding = '6px 12px';
+      btn.textContent = user;
+      btn.onclick = () => {
+        document.getElementById('name-input').value = user;
+        login();
+      };
+      container.appendChild(btn);
+    });
+  } catch (error) {
+    console.error("Błąd ładowania użytkowników:", error);
+    container.innerHTML = '<p style="font-size:10px; color:red;">Błąd połączenia z bazą</p>';
+  }
 }
 
 window.onload = loadExistingUsers;
